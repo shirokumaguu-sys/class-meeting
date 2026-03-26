@@ -2,66 +2,53 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>来場者集計</title>
+<title>クラス会 出席確認</title>
 
 <style>
 body{
-  font-family:sans-serif;
-  text-align:center;
+ font-family:sans-serif;
+ text-align:center;
 }
 
-h1{
-  font-size:28px;
+table{
+ border-collapse:collapse;
+ margin:auto;
 }
 
-input,button{
-  font-size:18px;
-  padding:6px;
-  margin:5px;
+td,th{
+ border:1px solid #aaa;
+ padding:6px;
 }
 
-#calendar{
-  margin-top:20px;
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:8px;
-}
-
-.day{
-  border:1px solid #ccc;
-  padding:10px;
+select,input,button{
+ font-size:16px;
+ padding:5px;
 }
 
 .result{
-  margin-top:20px;
-  font-size:20px;
-  font-weight:bold;
+ margin-top:20px;
+ font-size:20px;
+ font-weight:bold;
 }
 </style>
 </head>
 
 <body>
 
-<h1>来場者入力</h1>
+<h1>クラス会 出席確認</h1>
 
-<label>日付：</label>
-<input type="date" id="date">
+名前：
+<input id="name">
 
-<br>
-
-<label>午前：</label>
-<input type="number" id="morning" min="0">
-
-<label>午後：</label>
-<input type="number" id="afternoon" min="0">
+<table id="scheduleTable"></table>
 
 <br>
+<button onclick="submitForm()">送信 / 更新</button>
 
-<button onclick="submitData()">送信</button>
+<h2>集計結果</h2>
+<div id="results"></div>
 
-<div id="calendar"></div>
-
-<div class="result" id="result"></div>
+<div class="result" id="recommend"></div>
 
 <script src="script.js"></script>
 
