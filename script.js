@@ -35,14 +35,14 @@ const dates=[
 ];
 
 const choices={
-ok:"〇",
-morning:"午前",
-afternoon:"午後",
-ng:"×"
+ok:"〇参加できます",
+morning:"午前のみ",
+afternoon:"午後のみ",
+ng:"×参加できません"
 };
 
 // ======================
-// フォーム生成
+// フォーム生成（プルダウン）
 // ======================
 
 const table=document.getElementById("formTable");
@@ -50,17 +50,21 @@ const table=document.getElementById("formTable");
 let html="<tr><th>日程</th><th>回答</th></tr>";
 
 dates.forEach(d=>{
- html+=`<tr><td>${d}</td><td>`;
 
- for(const k in choices){
  html+=`
- <label>
- <input type="radio" name="${d}" value="${k}">
- ${choices[k]}
- </label>`;
- }
-
- html+="</td></tr>";
+ <tr>
+ <td>${d}</td>
+ <td>
+ <select id="${d}">
+ <option value="">未選択</option>
+ <option value="ok">〇参加できます</option>
+ <option value="morning">午前のみ</option>
+ <option value="afternoon">午後のみ</option>
+ <option value="ng">×参加できません</option>
+ </select>
+ </td>
+ </tr>
+ `;
 });
 
 table.innerHTML=html;
@@ -72,15 +76,17 @@ table.innerHTML=html;
 window.submitAnswer=async function(){
 
  const name=document.getElementById("name").value.trim();
- if(!name)return alert("名前必須");
+
+ if(!name){
+  alert("名前を入力してください");
+  return;
+ }
 
  let answers={};
 
  dates.forEach(d=>{
- const checked=document.querySelector(
- `input[name="${d}"]:checked`
- );
- if(checked)answers[d]=checked.value;
+ const v=document.getElementById(d).value;
+ if(v)answers[d]=v;
  });
 
  await setDoc(
@@ -89,7 +95,7 @@ window.submitAnswer=async function(){
  );
 
  document.getElementById("message")
- .innerText="✅送信しました（自動更新）";
+ .innerText="✅回答を保存しました（自動更新）";
 };
 
 // ======================
@@ -112,12 +118,12 @@ onSnapshot(
 });
 
 // ======================
-// 表生成
+// 結果表示
 // ======================
 
 function renderTable(data){
 
- let html="<table><tr><th>名前</th>";
+ let html="<table class='resultTable'><tr><th>名前</th>";
 
  dates.forEach(d=>html+=`<th>${d}</th>`);
  html+="</tr>";
@@ -147,10 +153,14 @@ for(const name in data){
  html+=`<tr><td>${name}</td>`;
 
  dates.forEach(d=>{
+
  const v=data[name][d];
- html+=`<td class="${v||""}">
- ${choices[v]||""}
- </td>`;
+
+ html+=`
+ <td class="${v||""}">
+ ${choices[v]||"-"}
+ </td>
+ `;
  });
 
  html+="</tr>";
@@ -161,6 +171,7 @@ html+="</table>";
 resultDiv.innerHTML=html;
 
 document.getElementById("best").innerText=
-"⭐おすすめ日程："+best.join(" / ")
-+"（"+max+"人参加可能）";
+"⭐おすすめ日程："+
+(best.length?best.join(" / "):"未確定")+
+"（"+max+"人参加可能）";
 }
