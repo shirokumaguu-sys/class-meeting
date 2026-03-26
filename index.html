@@ -5,46 +5,77 @@
 <title>クラス会出席確認</title>
 
 <style>
+
 body{
  font-family:sans-serif;
+ background:#f6f6f6;
+ margin:20px;
  text-align:center;
- background:#fff;
+}
+
+h1{
+ margin-bottom:10px;
+}
+
+.card{
+ background:white;
+ padding:20px;
+ border-radius:10px;
+ box-shadow:0 0 10px rgba(0,0,0,.1);
+ margin:auto;
+ max-width:900px;
 }
 
 table{
  border-collapse:collapse;
- margin:auto;
+ width:100%;
+ margin-top:15px;
 }
 
-td,th{
- border:1px solid #ccc;
- padding:6px;
+th,td{
+ border:1px solid #ddd;
+ padding:8px;
 }
 
-.ok{background:#b7f7b7}
-.morning{background:#b7d4ff}
-.afternoon{background:#fff4a3}
-.ng{background:#ffb7b7}
+select{
+ padding:5px;
+ width:140px;
+}
 
 button{
- padding:10px 20px;
  background:black;
  color:white;
  border:none;
- margin:10px;
+ padding:10px 20px;
+ margin-top:15px;
+ cursor:pointer;
 }
-</style>
 
+/* 色分け */
+.ok{background:#c8f7c5}
+.morning{background:#c5dcff}
+.afternoon{background:#fff1a8}
+.ng{background:#ffc5c5}
+
+.resultTable td{
+ font-weight:bold;
+}
+
+@media(max-width:700px){
+ select{width:100px}
+}
+
+</style>
 </head>
 
 <body>
 
+<div class="card">
+
 <h1>クラス会 出席確認</h1>
 
 名前：
-<input id="name">
-
-<br><br>
+<input id="name" placeholder="名前を入力">
 
 <table id="formTable"></table>
 
@@ -52,13 +83,19 @@ button{
 
 <p id="message"></p>
 
-<hr>
+</div>
 
-<h2>出席結果</h2>
+<br>
+
+<div class="card">
+
+<h2>出席結果（リアルタイム更新）</h2>
 
 <div id="result"></div>
 
 <h3 id="best"></h3>
+
+</div>
 
 <script type="module" src="script.js"></script>
 
