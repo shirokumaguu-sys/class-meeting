@@ -28,12 +28,13 @@ table{
 
 th,td{
  border:1px solid #ccc;
- padding:6px;
+ padding:8px;
 }
 
-label{
- margin-right:10px;
- cursor:pointer;
+select{
+ width:200px;
+ padding:5px;
+ font-size:15px;
 }
 
 .ok{background:#c8f7c5}
@@ -60,7 +61,7 @@ button{
 <h1>クラス会 出席確認</h1>
 
 名前：
-<input id="name">
+<input id="name" placeholder="名前">
 
 <table id="formTable"></table>
 
@@ -74,7 +75,8 @@ button{
 
 <div class="card">
 
-<h2>出席結果（リアルタイム）</h2>
+<h2>出席結果（リアルタイム更新）</h2>
+
 <div id="result"></div>
 
 <h3 id="best"></h3>
