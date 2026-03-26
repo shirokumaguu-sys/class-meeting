@@ -1,15 +1,17 @@
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+// ================= Firebase =================
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 
 import {
  getFirestore,
  collection,
- setDoc,
  doc,
+ setDoc,
  deleteDoc,
+ getDoc,
  onSnapshot
-} from
-"https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+}
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig={
  apiKey:"AIzaSyClb-PEpIXkhE2ytEsql0pIvAVyNUC_T-I",
@@ -19,10 +21,10 @@ const firebaseConfig={
 
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
-const col=collection(db,"responses");
+const responsesRef=collection(db,"responses");
 
 
-// ✅ 表示名と内部IDを分離
+// ================= 日程 =================
 const dates=[
 {id:"d1",label:"3月29日（金）"},
 {id:"d2",label:"3月30日（土）"},
@@ -38,6 +40,8 @@ const dates=[
 {id:"d12",label:"4月27日（日）"}
 ];
 
+
+// ================= UI生成（プルダウン式固定）=================
 const selectHTML=`
 <option value="">未選択</option>
 <option value="ok">〇参加できます</option>
@@ -49,111 +53,171 @@ const selectHTML=`
 const container=document.getElementById("dates");
 
 dates.forEach(d=>{
- const div=document.createElement("div");
- div.className="row";
- div.innerHTML=`
- <span>${d.label}</span>
- <select id="${d.id}">
- ${selectHTML}
- </select>
+ const row=document.createElement("div");
+ row.className="row";
+
+ row.innerHTML=`
+   <span>${d.label}</span>
+   <select id="${d.id}">
+     ${selectHTML}
+   </select>
  `;
- container.appendChild(div);
+
+ container.appendChild(row);
 });
 
 
-// ⭐ 送信（完全修正）
+// ================= 回答送信 =================
 window.submitAnswer=async()=>{
+
  const name=document.getElementById("name").value.trim();
 
  if(!name){
-  alert("名前を入力してね");
+  alert("名前を入力してください");
   return;
  }
 
  let answers={};
- let filled=false;
+ let selected=false;
 
  dates.forEach(d=>{
-  const v=document.getElementById(d.id).value;
-  if(v){
-   answers[d.label]=v;
-   filled=true;
+  const value=document.getElementById(d.id).value;
+  if(value){
+   answers[d.label]=value;
+   selected=true;
   }
  });
 
- if(!filled){
-  alert("1日以上選択してね");
+ // ⭐ 全未選択 → 削除
+ if(!selected){
+  await deleteDoc(doc(responsesRef,name));
+  alert("未選択なので削除しました");
   return;
  }
 
- await setDoc(doc(col,name),{
+ await setDoc(doc(responsesRef,name),{
   name,
-  answers
+  answers,
+  updatedAt:new Date()
  });
 
- alert("✅ 回答送信しました！");
+ alert("✅ 回答を送信しました！");
 };
 
 
-// ⭐ 削除
+// ================= 削除 =================
 window.deleteAnswer=async()=>{
+
  const name=document.getElementById("name").value.trim();
 
  if(!name){
-  alert("名前入力してね");
+  alert("名前を入力してください");
   return;
  }
 
- await deleteDoc(doc(col,name));
+ await deleteDoc(doc(responsesRef,name));
+
  alert("削除しました");
 };
 
 
-// ⭐ リアルタイム結果表示
-onSnapshot(col,snap=>{
+// ================= 名前入力で編集 =================
+document.getElementById("name")
+.addEventListener("change",async()=>{
+
+ const name=document.getElementById("name").value.trim();
+ if(!name) return;
+
+ const snap=await getDoc(doc(responsesRef,name));
+
+ // リセット
+ dates.forEach(d=>{
+  document.getElementById(d.id).value="";
+ });
+
+ if(!snap.exists()) return;
+
+ const data=snap.data();
+
+ dates.forEach(d=>{
+  if(data.answers[d.label]){
+   document.getElementById(d.id).value=data.answers[d.label];
+  }
+ });
+});
+
+
+// ================= 結果表示（リアルタイム）=================
+onSnapshot(responsesRef,(snapshot)=>{
 
  let html="<table><tr><th>名前</th>";
- dates.forEach(d=>html+=`<th>${d.label}</th>`);
+
+ dates.forEach(d=>{
+  html+=`<th>${d.label}</th>`;
+});
+
  html+="</tr>";
 
- let bestCount={};
- dates.forEach(d=>bestCount[d.label]=0);
+ // ⭐ スコア計算
+ let score={};
+ dates.forEach(d=>score[d.label]=0);
 
- snap.forEach(docu=>{
+ snapshot.forEach(docu=>{
 
   const data=docu.data();
+
   html+=`<tr><td>${data.name}</td>`;
 
   dates.forEach(d=>{
+
    const v=data.answers[d.label]||"";
 
    let text="";
-   let cls="";
+   let color="";
 
-   if(v==="ok"){text="〇";cls="ok";bestCount[d.label]++;}
-   if(v==="morning"){text="午前";cls="morning";}
-   if(v==="afternoon"){text="午後";cls="afternoon";}
-   if(v==="ng"){text="×";cls="ng";}
+   if(v==="ok"){
+     text="〇";
+     color="#22c55e";
+     score[d.label]+=2;
+   }
 
-   html+=`<td class="${cls}">${text}</td>`;
+   if(v==="morning"){
+     text="午前";
+     color="#3b82f6";
+     score[d.label]+=1;
+   }
+
+   if(v==="afternoon"){
+     text="午後";
+     color="#facc15";
+     score[d.label]+=1;
+   }
+
+   if(v==="ng"){
+     text="×";
+     color="#ef4444";
+   }
+
+   html+=`<td style="background:${color}22">${text}</td>`;
   });
 
   html+="</tr>";
- });
+});
 
  html+="</table>";
 
  document.getElementById("result").innerHTML=html;
 
- // ⭐おすすめ日計算
- const max=Math.max(...Object.values(bestCount));
 
- const best=Object.entries(bestCount)
-  .filter(([d,c])=>c===max && c>0)
-  .map(([d])=>d);
+ // ================= ⭐最適日程 =================
+ const maxScore=Math.max(...Object.values(score));
+
+ const bestDays=Object.entries(score)
+   .filter(([d,s])=>s===maxScore && s>0)
+   .map(([d])=>d);
 
  document.getElementById("best").innerText=
- best.length
- ?`おすすめ日程：${best.join(" / ")}（${max}人参加可能）`
+ bestDays.length
+ ?`⭐ クラス会おすすめ日程：${bestDays.join(" / ")}`
  :"";
 });
