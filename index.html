@@ -2,43 +2,143 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>クラス会 出欠確認</title>
 
 <style>
-body{font-family:sans-serif;background:#f5f5f5;margin:0}
-header{background:#000;color:#fff;padding:15px;text-align:center}
-.container{padding:20px}
-.card{background:#fff;padding:15px;margin:10px 0;border-radius:10px}
-button{background:#000;color:#fff;border:none;padding:10px 15px;border-radius:6px}
-.available{background:#c8e6c9}
-.morning{background:#bbdefb}
-.afternoon{background:#fff9c4}
-.unavailable{background:#ffcdd2}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th,td{border:1px solid #ccc;padding:5px;text-align:center}
-</style>
 
+body{
+font-family:sans-serif;
+max-width:900px;
+margin:auto;
+padding:20px;
+background:#fff;
+}
+
+h1{text-align:center;}
+
+input,select{
+padding:8px;
+margin:5px 0;
+width:100%;
+}
+
+button{
+background:black;
+color:white;
+border:none;
+padding:10px;
+width:100%;
+cursor:pointer;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+td,th{
+border:1px solid #ccc;
+padding:8px;
+text-align:center;
+}
+
+.available{background:#c8f7c5;}
+.morning{background:#bbdefb;}
+.afternoon{background:#fff59d;}
+.unavailable{background:#ffcdd2;}
+
+</style>
 </head>
 
 <body>
 
-<header>クラス会 出欠確認</header>
+<h1>クラス会 出欠確認</h1>
 
-<div class="container">
+<input id="name" placeholder="名前を入力">
 
-<input id="name" placeholder="名前">
+<select id="answer">
+<option value="available">〇参加できます</option>
+<option value="morning">午前のみ</option>
+<option value="afternoon">午後のみ</option>
+<option value="unavailable">×参加できません</option>
+</select>
 
-<div id="dates"></div>
+<button onclick="send()">回答を送信</button>
 
-<button onclick="submitForm()">送信</button>
+<table>
+<thead>
+<tr>
+<th>名前</th>
+<th>回答</th>
+</tr>
+</thead>
+<tbody id="result"></tbody>
+</table>
 
-<h2>結果</h2>
-<div id="result"></div>
+<script type="module">
 
-</div>
+import { db } from "./firebase.js";
 
-<!-- Firebase + JS -->
-<script type="module" src="app.js"></script>
+import {
+collection,
+doc,
+setDoc,
+onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const responses = collection(db,"responses");
+
+// 送信
+window.send = async () => {
+
+const name=document.getElementById("name").value.trim();
+const answer=document.getElementById("answer").value;
+
+if(!name){
+alert("名前を入力してください");
+return;
+}
+
+// 名前＝ID → 自動上書き
+await setDoc(doc(responses,name),{
+name,
+answer,
+updated:new Date()
+});
+
+};
+
+// リアルタイム更新
+onSnapshot(responses,(snapshot)=>{
+
+const tbody=document.getElementById("result");
+tbody.innerHTML="";
+
+snapshot.forEach(docData=>{
+
+const data=docData.data();
+
+const label={
+available:"〇",
+morning:"午前",
+afternoon:"午後",
+unavailable:"×"
+}[data.answer];
+
+tbody.innerHTML+=`
+<tr class="${data.answer}">
+<td>${data.name}</td>
+<td>${label}</td>
+</tr>
+`;
+
+});
+
+});
+
+</script>
 
 </body>
 </html>
