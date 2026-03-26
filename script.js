@@ -1,112 +1,166 @@
-// =====================
-// 日程一覧
-// =====================
-const dates = [
+// ======================
+// Firebase
+// ======================
+
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+
+import {
+ getFirestore,
+ doc,
+ setDoc,
+ onSnapshot,
+ collection
+} from
+"https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyClb-PEpIXkhE2ytEsql0pIvAVyNUC_T-I",
+ authDomain:"class-meeting-2-2.firebaseapp.com",
+ projectId:"class-meeting-2-2"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+
+// ======================
+// 日程
+// ======================
+
+const dates=[
 "3/29(金)","3/30(土)","3/31(日)",
 "4/1(水)","4/2(木)","4/3(金)",
 "4/4(土)","4/5(日)","4/6(月)",
 "4/7(火)","4/26(土)","4/27(日)"
 ];
 
-const options = [
-"いける",
-"午前だけ",
-"午後だけ",
-"いけない"
-];
+const choices={
+ok:"〇",
+morning:"午前",
+afternoon:"午後",
+ng:"×"
+};
 
-let data = JSON.parse(localStorage.getItem("classData")||"{}");
+// ======================
+// フォーム生成
+// ======================
 
-// =====================
-// 表作成
-// =====================
-const table=document.getElementById("scheduleTable");
+const table=document.getElementById("formTable");
 
-let header="<tr><th>日程</th><th>出席</th></tr>";
+let html="<tr><th>日程</th><th>回答</th></tr>";
 
 dates.forEach(d=>{
- header+=`
- <tr>
-   <td>${d}</td>
-   <td>
-     <select id="${d}">
-       ${options.map(o=>`<option>${o}</option>`).join("")}
-     </select>
-   </td>
- </tr>`;
-});
+ html+=`<tr><td>${d}</td><td>`;
 
-table.innerHTML=header;
-
-
-// =====================
-// 送信（変更もここ）
-// =====================
-function submitForm(){
-
- const name=document.getElementById("name").value.trim();
-
- if(!name){
-  alert("名前を入力してください");
-  return;
+ for(const k in choices){
+ html+=`
+ <label>
+ <input type="radio" name="${d}" value="${k}">
+ ${choices[k]}
+ </label>`;
  }
 
- data[name]={};
+ html+="</td></tr>";
+});
+
+table.innerHTML=html;
+
+// ======================
+// 送信
+// ======================
+
+window.submitAnswer=async function(){
+
+ const name=document.getElementById("name").value.trim();
+ if(!name)return alert("名前必須");
+
+ let answers={};
 
  dates.forEach(d=>{
-  data[name][d]=document.getElementById(d).value;
+ const checked=document.querySelector(
+ `input[name="${d}"]:checked`
+ );
+ if(checked)answers[d]=checked.value;
  });
 
- localStorage.setItem("classData",JSON.stringify(data));
+ await setDoc(
+  doc(db,"responses",name),
+  {answers}
+ );
 
- renderResults();
-}
+ document.getElementById("message")
+ .innerText="✅送信しました（自動更新）";
+};
 
-// =====================
-// 集計表示
-// =====================
-function renderResults(){
+// ======================
+// リアルタイム結果表示
+// ======================
 
- const div=document.getElementById("results");
- div.innerHTML="";
+const resultDiv=document.getElementById("result");
 
- let bestDay="";
- let bestScore=-1;
+onSnapshot(
+ collection(db,"responses"),
+ snap=>{
+
+ let data={};
+
+ snap.forEach(doc=>{
+  data[doc.id]=doc.data().answers;
+ });
+
+ renderTable(data);
+});
+
+// ======================
+// 表生成
+// ======================
+
+function renderTable(data){
+
+ let html="<table><tr><th>名前</th>";
+
+ dates.forEach(d=>html+=`<th>${d}</th>`);
+ html+="</tr>";
+
+ let best=[];
+ let max=0;
 
  dates.forEach(date=>{
 
-   let ok=0;
-   let morning=0;
-   let afternoon=0;
+ let count=0;
 
-   for(const name in data){
-     const v=data[name][date];
+ for(const name in data){
+ if(data[name][date]==="ok")count++;
+ }
 
-     if(v==="いける"){
-       ok++; morning++; afternoon++;
-     }
-     if(v==="午前だけ") morning++;
-     if(v==="午後だけ") afternoon++;
-   }
+ if(count>max){
+  max=count;
+  best=[date];
+ }else if(count===max){
+  best.push(date);
+ }
 
-   const score = ok*2 + morning + afternoon;
+});
 
-   if(score>bestScore){
-     bestScore=score;
-     bestDay=date;
-   }
+for(const name in data){
 
-   div.innerHTML+=`
-   <p>
-   ${date}<br>
-   ◎いける:${ok}人　
-   🌞午前OK:${morning}人　
-   🌙午後OK:${afternoon}人
-   </p>`;
+ html+=`<tr><td>${name}</td>`;
+
+ dates.forEach(d=>{
+ const v=data[name][d];
+ html+=`<td class="${v||""}">
+ ${choices[v]||""}
+ </td>`;
  });
 
- document.getElementById("recommend").innerText =
-   "⭐おすすめ開催日："+bestDay;
+ html+="</tr>";
 }
 
-renderResults();
+html+="</table>";
+
+resultDiv.innerHTML=html;
+
+document.getElementById("best").innerText=
+"⭐おすすめ日程："+best.join(" / ")
++"（"+max+"人参加可能）";
+}
