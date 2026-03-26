@@ -1,88 +1,112 @@
-// ======================
-// データ保存
-// ======================
-let data = {};
+// =====================
+// 日程一覧
+// =====================
+const dates = [
+"3/29(金)","3/30(土)","3/31(日)",
+"4/1(水)","4/2(木)","4/3(金)",
+"4/4(土)","4/5(日)","4/6(月)",
+"4/7(火)","4/26(土)","4/27(日)"
+];
 
-// ======================
-// 送信処理
-// ======================
-function submitData(){
+const options = [
+"いける",
+"午前だけ",
+"午後だけ",
+"いけない"
+];
 
-  const date = document.getElementById("date").value;
-  const morningInput = document.getElementById("morning").value;
-  const afternoonInput = document.getElementById("afternoon").value;
+let data = JSON.parse(localStorage.getItem("classData")||"{}");
 
-  if(!date){
-    alert("日付を選んでください");
-    return;
-  }
+// =====================
+// 表作成
+// =====================
+const table=document.getElementById("scheduleTable");
 
-  // 空でもOKにする
-  const morning = Number(morningInput) || 0;
-  const afternoon = Number(afternoonInput) || 0;
+let header="<tr><th>日程</th><th>出席</th></tr>";
 
-  if(!data[date]){
-    data[date] = {morning:0, afternoon:0};
-  }
+dates.forEach(d=>{
+ header+=`
+ <tr>
+   <td>${d}</td>
+   <td>
+     <select id="${d}">
+       ${options.map(o=>`<option>${o}</option>`).join("")}
+     </select>
+   </td>
+ </tr>`;
+});
 
-  data[date].morning += morning;
-  data[date].afternoon += afternoon;
+table.innerHTML=header;
 
-  renderCalendar();
-  showResult();
 
-  // 入力リセット
-  document.getElementById("morning").value="";
-  document.getElementById("afternoon").value="";
+// =====================
+// 送信（変更もここ）
+// =====================
+function submitForm(){
+
+ const name=document.getElementById("name").value.trim();
+
+ if(!name){
+  alert("名前を入力してください");
+  return;
+ }
+
+ data[name]={};
+
+ dates.forEach(d=>{
+  data[name][d]=document.getElementById(d).value;
+ });
+
+ localStorage.setItem("classData",JSON.stringify(data));
+
+ renderResults();
 }
 
-// ======================
-// カレンダー表示
-// ======================
-function renderCalendar(){
+// =====================
+// 集計表示
+// =====================
+function renderResults(){
 
-  const calendar = document.getElementById("calendar");
-  calendar.innerHTML="";
+ const div=document.getElementById("results");
+ div.innerHTML="";
 
-  const dates = Object.keys(data).sort();
+ let bestDay="";
+ let bestScore=-1;
 
-  dates.forEach(date=>{
-    const d = data[date];
+ dates.forEach(date=>{
 
-    const div = document.createElement("div");
-    div.className="day";
+   let ok=0;
+   let morning=0;
+   let afternoon=0;
 
-    div.innerHTML = `
-      <strong>${date}</strong><br>
-      午前：${d.morning}<br>
-      午後：${d.afternoon}
-    `;
+   for(const name in data){
+     const v=data[name][date];
 
-    calendar.appendChild(div);
-  });
+     if(v==="いける"){
+       ok++; morning++; afternoon++;
+     }
+     if(v==="午前だけ") morning++;
+     if(v==="午後だけ") afternoon++;
+   }
+
+   const score = ok*2 + morning + afternoon;
+
+   if(score>bestScore){
+     bestScore=score;
+     bestDay=date;
+   }
+
+   div.innerHTML+=`
+   <p>
+   ${date}<br>
+   ◎いける:${ok}人　
+   🌞午前OK:${morning}人　
+   🌙午後OK:${afternoon}人
+   </p>`;
+ });
+
+ document.getElementById("recommend").innerText =
+   "⭐おすすめ開催日："+bestDay;
 }
 
-// ======================
-// 結果表示（最混雑）
-// ======================
-function showResult(){
-
-  let maxPeople = -1;
-  let maxText = "データなし";
-
-  for(const date in data){
-
-    if(data[date].morning > maxPeople){
-      maxPeople = data[date].morning;
-      maxText = `${date} の午前`;
-    }
-
-    if(data[date].afternoon > maxPeople){
-      maxPeople = data[date].afternoon;
-      maxText = `${date} の午後`;
-    }
-  }
-
-  document.getElementById("result").innerText =
-    `一番人が多い時間：${maxText}（${maxPeople}人）`;
-}
+renderResults();
