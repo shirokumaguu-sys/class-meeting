@@ -1,175 +1,177 @@
-// ===== Firebase =====
 import { initializeApp }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 
 import {
  getFirestore,
  doc,
  setDoc,
- deleteDoc,
- collection,
  onSnapshot,
- getDoc
+ collection
 }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-const firebaseConfig = {
- apiKey: "APIKEY",
- authDomain: "PROJECT.firebaseapp.com",
- projectId: "PROJECTID",
+const firebaseConfig={
+ apiKey:"AIzaSyClb-PEpIXkhE2ytEsql0pIvAVyNUC_T-I",
+ authDomain:"class-meeting-2-2.firebaseapp.com",
+ projectId:"class-meeting-2-2"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
+// ======================
+// 日程（表示用）
+// ======================
 
-// ===== 日程（HTML側と一致させる）=====
-const schedule = [
- "3/29",
- "3/30",
- "3/31",
- "4/1",
- "4/2",
- "4/3",
- "4/4",
- "4/5",
- "4/6",
- "4/7",
- "4/26",
- "4/27"
+const dates=[
+"3月29日(金)","3月30日(土)","3月31日(日)",
+"4月1日(水)","4月2日(木)","4月3日(金)",
+"4月4日(土)","4月5日(日)","4月6日(月)",
+"4月7日(火)","4月26日(土)","4月27日(日)"
 ];
 
+// 内部ID
+const ids=dates.map((_,i)=>"d"+i);
 
-// ===== 送信 =====
-window.submitAnswer = async function(){
-
- const name =
-   document.getElementById("name").value.trim();
-
- if(!name){
-   alert("名前を入力してください");
-   return;
- }
-
- const data={};
- let allEmpty=true;
-
- schedule.forEach(day=>{
-
-   const select =
-     document.getElementById("date_"+day);
-
-   if(!select) return;
-
-   const value=select.value;
-
-   if(value!=="未選択") allEmpty=false;
-
-   data[day]=value;
- });
-
- const ref = doc(db,"responses",name);
- const before = await getDoc(ref);
-
- // ⭐ 全未選択 → 削除
- if(allEmpty){
-
-   if(before.exists()){
-     await deleteDoc(ref);
-     document.getElementById("message").textContent =
-       "🗑 回答を削除しました";
-   }else{
-     document.getElementById("message").textContent =
-       "未選択のため保存されません";
-   }
-
-   return;
- }
-
- // 保存
- await setDoc(ref,data);
-
- document.getElementById("message").textContent =
-   before.exists()
-   ? "✅ 回答を更新しました"
-   : "✅ 回答を保存しました";
+const choices={
+ok:"〇参加できます",
+morning:"午前のみ",
+afternoon:"午後のみ",
+ng:"×参加できません"
 };
 
+// ======================
+// フォーム生成
+// ======================
 
-// ===== 手動削除 =====
-window.deleteAnswer = async function(){
+const table=document.getElementById("formTable");
 
- const name =
-   document.getElementById("name").value.trim();
+let html="<tr><th>日程</th><th>回答</th></tr>";
+
+dates.forEach((d,i)=>{
+
+ html+=`
+ <tr>
+ <td>${d}</td>
+ <td>
+ <select id="${ids[i]}">
+ <option value="">未選択</option>
+ <option value="ok">〇参加できます</option>
+ <option value="morning">午前のみ</option>
+ <option value="afternoon">午後のみ</option>
+ <option value="ng">×参加できません</option>
+ </select>
+ </td>
+ </tr>
+ `;
+});
+
+table.innerHTML=html;
+
+// ======================
+// 送信（修正版）
+// ======================
+
+window.submitAnswer=async function(){
+
+ const name=document.getElementById("name").value.trim();
 
  if(!name){
-   alert("名前を入力してください");
-   return;
+  alert("名前を入力してください");
+  return;
  }
 
- await deleteDoc(doc(db,"responses",name));
+ let answers={};
 
- document.getElementById("message").textContent =
-   "🗑 削除しました";
-};
-
-
-// ===== 結果リアルタイム =====
-onSnapshot(collection(db,"responses"),snap=>{
-
- const result =
-   document.getElementById("result");
-
- result.innerHTML="";
-
- if(snap.empty){
-   document.getElementById("bestDay").textContent="";
-   return;
- }
-
- const table=document.createElement("table");
-
- const header=document.createElement("tr");
- header.innerHTML=
-   "<th>名前</th>"+
-   schedule.map(d=>`<th>${d}</th>`).join("");
-
- table.appendChild(header);
-
- const goodCount={};
- schedule.forEach(d=>goodCount[d]=0);
-
- snap.forEach(docSnap=>{
-
-   const name=docSnap.id;
-   const data=docSnap.data();
-
-   const tr=document.createElement("tr");
-   tr.innerHTML=`<td>${name}</td>`;
-
-   schedule.forEach(day=>{
-
-     const val=data[day]||"未選択";
-
-     if(val==="〇参加できます")
-       goodCount[day]++;
-
-     tr.innerHTML+=`<td>${val}</td>`;
-   });
-
-   table.appendChild(tr);
+ ids.forEach((id,i)=>{
+ const v=document.getElementById(id).value;
+ if(v)answers[dates[i]]=v;
  });
 
- result.appendChild(table);
+ try{
 
- const max=Math.max(...Object.values(goodCount));
+ await setDoc(
+  doc(db,"responses",name),
+  {answers}
+ );
 
- const best=Object.keys(goodCount)
-   .filter(d=>goodCount[d]===max);
+ document.getElementById("message")
+ .innerText="✅回答を保存しました（自動更新）";
 
- document.getElementById("bestDay").textContent =
-   "⭐おすすめ日程：" +
-   best.join(" / ") +
-   `（${max}人参加可能）`;
+ }catch(e){
+  alert("保存失敗："+e.message);
+ }
+};
+
+// ======================
+// リアルタイム表示
+// ======================
+
+onSnapshot(
+ collection(db,"responses"),
+ snap=>{
+
+ let data={};
+
+ snap.forEach(doc=>{
+  data[doc.id]=doc.data().answers;
+ });
+
+ renderResult(data);
+});
+
+// ======================
+// 結果表示
+// ======================
+
+function renderResult(data){
+
+ let html="<table><tr><th>名前</th>";
+
+ dates.forEach(d=>html+=`<th>${d}</th>`);
+ html+="</tr>";
+
+ let best=[];
+ let max=0;
+
+ dates.forEach(date=>{
+
+ let count=0;
+
+ for(const name in data){
+ if(data[name][date]==="ok")count++;
+ }
+
+ if(count>max){
+  max=count;
+  best=[date];
+ }else if(count===max){
+  best.push(date);
+ }
 
 });
+
+for(const name in data){
+
+ html+=`<tr><td>${name}</td>`;
+
+ dates.forEach(d=>{
+ const v=data[name][d];
+
+ html+=`
+ <td class="${v||""}">
+ ${choices[v]||"-"}
+ </td>`;
+ });
+
+ html+="</tr>";
+}
+
+html+="</table>";
+
+document.getElementById("result").innerHTML=html;
+
+document.getElementById("best").innerText=
+"⭐おすすめ日程："+best.join(" / ")
++"（"+max+"人参加可能）";
+}
