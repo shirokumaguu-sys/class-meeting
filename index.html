@@ -2,51 +2,44 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>クラス会 出席確認</title>
+<title>クラス会出席確認</title>
 
 <style>
 body{
  font-family:sans-serif;
- max-width:800px;
+ background:#f4f6fa;
+ max-width:900px;
  margin:auto;
  padding:20px;
- background:#f5f7fb;
 }
 
-h1{
- text-align:center;
-}
+h1{text-align:center;}
 
 .row{
  display:flex;
  justify-content:space-between;
- align-items:center;
  background:white;
- padding:10px;
  margin:6px 0;
+ padding:10px;
  border-radius:10px;
- box-shadow:0 2px 5px rgba(0,0,0,0.08);
+ box-shadow:0 2px 5px rgba(0,0,0,.08);
 }
 
-select{
- padding:6px;
- font-size:14px;
-}
+select{padding:5px;}
 
 button{
- margin-top:15px;
- padding:10px 18px;
- font-size:16px;
+ margin-top:10px;
+ padding:8px 14px;
  border:none;
  border-radius:8px;
- background:#3b82f6;
+ background:black;
  color:white;
  cursor:pointer;
 }
 
 table{
  width:100%;
- margin-top:25px;
+ margin-top:20px;
  border-collapse:collapse;
  background:white;
 }
@@ -57,9 +50,10 @@ th,td{
  text-align:center;
 }
 
-th{
- background:#eaeaea;
-}
+.ok{background:#c8f7c5;}
+.morning{background:#bfe3ff;}
+.afternoon{background:#fff4b3;}
+.ng{background:#ffc7c7;}
 </style>
 </head>
 
@@ -68,143 +62,18 @@ th{
 <h1>クラス会 出席確認</h1>
 
 名前：
-<input id="name" placeholder="名前" required>
+<input id="name">
 
-<div id="schedule">
+<button onclick="submitAnswer()">回答送信</button>
+<button onclick="deleteAnswer()">削除</button>
 
-<div class="row">3月29日（金）
-<select id="date_3/29">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">3月30日（土）
-<select id="date_3/30">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">3月31日（日）
-<select id="date_3/31">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月1日（水）
-<select id="date_4/1">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月2日（木）
-<select id="date_4/2">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月3日（金）
-<select id="date_4/3">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月4日（土)
-<select id="date_4/4">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月5日（日）
-<select id="date_4/5">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月6日（月）
-<select id="date_4/6">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月7日（火）
-<select id="date_4/7">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月26日（土）
-<select id="date_4/26">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-<div class="row">4月27日（日）
-<select id="date_4/27">
-<option>未選択</option>
-<option>〇参加できます</option>
-<option>午前のみ</option>
-<option>午後のみ</option>
-<option>×参加できません</option>
-</select>
-</div>
-
-</div>
-
-<button onclick="submitAnswer()">回答を送信</button>
-<button onclick="deleteAnswer()">結果削除</button>
-
-<p id="message"></p>
+<div id="dates"></div>
 
 <h2>出席結果</h2>
 <div id="result"></div>
 
-<h3 id="bestDay"></h3>
+<h3 id="best"></h3>
 
 <script type="module" src="script.js"></script>
-
 </body>
 </html>
