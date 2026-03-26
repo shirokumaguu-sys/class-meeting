@@ -1,32 +1,44 @@
-<script type="module">
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>クラス会 出欠確認</title>
 
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+<style>
+body{font-family:sans-serif;background:#f5f5f5;margin:0}
+header{background:#000;color:#fff;padding:15px;text-align:center}
+.container{padding:20px}
+.card{background:#fff;padding:15px;margin:10px 0;border-radius:10px}
+button{background:#000;color:#fff;border:none;padding:10px 15px;border-radius:6px}
+.available{background:#c8e6c9}
+.morning{background:#bbdefb}
+.afternoon{background:#fff9c4}
+.unavailable{background:#ffcdd2}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid #ccc;padding:5px;text-align:center}
+</style>
 
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot
-} from
-"https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+</head>
 
+<body>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyClb-PEpIXkhE2ytEsql0pIvAVyNUC_T-I",
-  authDomain: "class-meeting-2-2.firebaseapp.com",
-  projectId: "class-meeting-2-2",
-  storageBucket: "class-meeting-2-2.firebasestorage.app",
-  messagingSenderId: "43109933184",
-  appId: "1:43109933184:web:d16e2240b21204fb000665"
-};
+<header>クラス会 出欠確認</header>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+<div class="container">
 
-window.db = db;
-window.collection = collection;
-window.addDoc = addDoc;
-window.onSnapshot = onSnapshot;
+<input id="name" placeholder="名前">
 
-</script>
+<div id="dates"></div>
+
+<button onclick="submitForm()">送信</button>
+
+<h2>結果</h2>
+<div id="result"></div>
+
+</div>
+
+<!-- Firebase + JS -->
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
