@@ -9,28 +9,12 @@
 
 body{
 font-family:sans-serif;
-max-width:900px;
+max-width:1100px;
 margin:auto;
 padding:20px;
-background:#fff;
 }
 
 h1{text-align:center;}
-
-input,select{
-padding:8px;
-margin:5px 0;
-width:100%;
-}
-
-button{
-background:black;
-color:white;
-border:none;
-padding:10px;
-width:100%;
-cursor:pointer;
-}
 
 table{
 width:100%;
@@ -40,8 +24,19 @@ margin-top:20px;
 
 td,th{
 border:1px solid #ccc;
-padding:8px;
+padding:6px;
 text-align:center;
+font-size:14px;
+}
+
+button{
+background:black;
+color:white;
+border:none;
+padding:10px;
+width:100%;
+margin-top:10px;
+cursor:pointer;
 }
 
 .available{background:#c8f7c5;}
@@ -56,22 +51,18 @@ text-align:center;
 
 <h1>クラス会 出欠確認</h1>
 
-<input id="name" placeholder="名前を入力">
+<input id="name" placeholder="名前">
 
-<select id="answer">
-<option value="available">〇参加できます</option>
-<option value="morning">午前のみ</option>
-<option value="afternoon">午後のみ</option>
-<option value="unavailable">×参加できません</option>
-</select>
+<div id="form"></div>
 
 <button onclick="send()">回答を送信</button>
 
+<h2>結果</h2>
+
 <table>
 <thead>
-<tr>
+<tr id="header">
 <th>名前</th>
-<th>回答</th>
 </tr>
 </thead>
 <tbody id="result"></tbody>
@@ -88,51 +79,90 @@ setDoc,
 onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-const responses = collection(db,"responses");
+// ===== 日程 =====
+const dates=[
+"3/28","3/29","3/30","3/31",
+"4/1","4/2","4/3","4/4","4/5","4/6","4/7",
+"4/11","4/12","4/18","4/19","4/25","4/26"
+];
+
+// ===== フォーム生成 =====
+const form=document.getElementById("form");
+const header=document.getElementById("header");
+
+dates.forEach((d,i)=>{
+
+header.innerHTML+=`<th>${d}</th>`;
+
+const div=document.createElement("div");
+
+div.innerHTML=`
+<b>${d}</b><br>
+<label><input type="radio" name="d${i}" value="available" checked>〇</label>
+<label><input type="radio" name="d${i}" value="morning">午前</label>
+<label><input type="radio" name="d${i}" value="afternoon">午後</label>
+<label><input type="radio" name="d${i}" value="unavailable">×</label>
+<hr>
+`;
+
+form.appendChild(div);
+
+});
+
+// ===== Firebase =====
+const responses=collection(db,"responses");
 
 // 送信
-window.send = async () => {
+window.send=async()=>{
 
 const name=document.getElementById("name").value.trim();
-const answer=document.getElementById("answer").value;
+if(!name)return alert("名前入力");
 
-if(!name){
-alert("名前を入力してください");
-return;
-}
+const answers={};
 
-// 名前＝ID → 自動上書き
+dates.forEach((_,i)=>{
+answers[i]=document.querySelector(`input[name="d${i}"]:checked`).value;
+});
+
 await setDoc(doc(responses,name),{
 name,
-answer,
+answers,
 updated:new Date()
 });
 
+alert("保存しました");
+
 };
 
-// リアルタイム更新
+// ===== リアルタイム表示 =====
 onSnapshot(responses,(snapshot)=>{
 
 const tbody=document.getElementById("result");
 tbody.innerHTML="";
 
-snapshot.forEach(docData=>{
+snapshot.forEach(d=>{
 
-const data=docData.data();
+const data=d.data();
+
+let row=`<tr><td>${data.name}</td>`;
+
+dates.forEach((_,i)=>{
+
+const val=data.answers?.[i]||"unavailable";
 
 const label={
 available:"〇",
 morning:"午前",
 afternoon:"午後",
 unavailable:"×"
-}[data.answer];
+}[val];
 
-tbody.innerHTML+=`
-<tr class="${data.answer}">
-<td>${data.name}</td>
-<td>${label}</td>
-</tr>
-`;
+row+=`<td class="${val}">${label}</td>`;
+});
+
+row+="</tr>";
+
+tbody.innerHTML+=row;
 
 });
 
