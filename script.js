@@ -8,7 +8,8 @@ import {
  setDoc,
  deleteDoc,
  collection,
- onSnapshot
+ onSnapshot,
+ getDoc
 } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -31,13 +32,14 @@ const schedule = [
 ];
 
 const selectOptions = [
+ "未選択",
  "〇参加できます",
  "午前のみ",
  "午後のみ",
  "×参加できません"
 ];
 
-// ===== 日程UI生成 =====
+// ===== UI生成 =====
 const datesDiv = document.getElementById("dates");
 
 schedule.forEach(day=>{
@@ -68,20 +70,47 @@ async function submitAnswer(){
  }
 
  const data={};
+ let allEmpty = true;
 
  schedule.forEach(day=>{
-   data[day]=document.getElementById("date_"+day).value;
+   const val=document.getElementById("date_"+day).value;
+   if(val !== "未選択"){
+     allEmpty = false;
+   }
+   data[day]=val;
  });
 
- await setDoc(doc(db,"responses",name),data);
+ const docRef = doc(db,"responses",name);
+ const existing = await getDoc(docRef);
 
- document.getElementById("message").textContent=
- "✅ 回答を保存しました（自動更新対応）";
+ // 🔥 全部未選択なら削除
+ if(allEmpty){
+   if(existing.exists()){
+     await deleteDoc(docRef);
+     document.getElementById("message").textContent =
+       "🗑 全て未選択だったため回答を削除しました";
+   } else {
+     document.getElementById("message").textContent =
+       "未選択のため保存されませんでした";
+   }
+   return;
+ }
+
+ // 通常保存
+ await setDoc(docRef,data);
+
+ if(existing.exists()){
+   document.getElementById("message").textContent =
+     "✅ 回答を更新しました";
+ } else {
+   document.getElementById("message").textContent =
+     "✅ 新しく回答を保存しました";
+ }
 }
 
 window.submitAnswer=submitAnswer;
 
-// ===== 削除 =====
+// ===== 手動削除 =====
 async function deleteAnswer(){
 
  const name=document.getElementById("name").value.trim();
@@ -101,15 +130,19 @@ async function deleteAnswer(){
 window.deleteAnswer=deleteAnswer;
 
 
-// ===== 結果リアルタイム表示 =====
+// ===== 結果表示 =====
 onSnapshot(collection(db,"responses"),snapshot=>{
 
  const resultDiv=document.getElementById("result");
  resultDiv.innerHTML="";
 
+ if(snapshot.empty){
+   document.getElementById("bestDay").textContent="";
+   return;
+ }
+
  const table=document.createElement("table");
 
- // ヘッダー
  const header=document.createElement("tr");
  header.innerHTML="<th>名前</th>"+
  schedule.map(d=>`<th>${d}</th>`).join("");
@@ -149,9 +182,7 @@ onSnapshot(collection(db,"responses"),snapshot=>{
 
  resultDiv.appendChild(table);
 
- // ===== 最適日計算 =====
  const max=Math.max(...Object.values(goodCount));
-
  const best=Object.keys(goodCount)
    .filter(d=>goodCount[d]===max);
 
