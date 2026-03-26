@@ -19,9 +19,9 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
-// =====================
-// 日程
-// =====================
+// ======================
+// 日程（表示用）
+// ======================
 
 const dates=[
 "3月29日(金)","3月30日(土)","3月31日(日)",
@@ -30,6 +30,9 @@ const dates=[
 "4月7日(火)","4月26日(土)","4月27日(日)"
 ];
 
+// 内部ID
+const ids=dates.map((_,i)=>"d"+i);
+
 const choices={
 ok:"〇参加できます",
 morning:"午前のみ",
@@ -37,21 +40,21 @@ afternoon:"午後のみ",
 ng:"×参加できません"
 };
 
-// =====================
-// フォーム生成（プルダウン）
-// =====================
+// ======================
+// フォーム生成
+// ======================
 
 const table=document.getElementById("formTable");
 
 let html="<tr><th>日程</th><th>回答</th></tr>";
 
-dates.forEach(d=>{
+dates.forEach((d,i)=>{
 
  html+=`
  <tr>
  <td>${d}</td>
  <td>
- <select id="${d}">
+ <select id="${ids[i]}">
  <option value="">未選択</option>
  <option value="ok">〇参加できます</option>
  <option value="morning">午前のみ</option>
@@ -65,9 +68,9 @@ dates.forEach(d=>{
 
 table.innerHTML=html;
 
-// =====================
-// 送信
-// =====================
+// ======================
+// 送信（修正版）
+// ======================
 
 window.submitAnswer=async function(){
 
@@ -80,10 +83,12 @@ window.submitAnswer=async function(){
 
  let answers={};
 
- dates.forEach(d=>{
- const v=document.getElementById(d).value;
- if(v)answers[d]=v;
+ ids.forEach((id,i)=>{
+ const v=document.getElementById(id).value;
+ if(v)answers[dates[i]]=v;
  });
+
+ try{
 
  await setDoc(
   doc(db,"responses",name),
@@ -91,12 +96,16 @@ window.submitAnswer=async function(){
  );
 
  document.getElementById("message")
- .innerText="✅回答を保存しました";
+ .innerText="✅回答を保存しました（自動更新）";
+
+ }catch(e){
+  alert("保存失敗："+e.message);
+ }
 };
 
-// =====================
-// リアルタイム結果表示
-// =====================
+// ======================
+// リアルタイム表示
+// ======================
 
 onSnapshot(
  collection(db,"responses"),
@@ -111,9 +120,9 @@ onSnapshot(
  renderResult(data);
 });
 
-// =====================
+// ======================
 // 結果表示
-// =====================
+// ======================
 
 function renderResult(data){
 
@@ -147,7 +156,6 @@ for(const name in data){
  html+=`<tr><td>${name}</td>`;
 
  dates.forEach(d=>{
-
  const v=data[name][d];
 
  html+=`
