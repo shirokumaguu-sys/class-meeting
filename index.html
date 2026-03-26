@@ -1,255 +1,32 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>クラス会 出欠確認</title>
+<script type="module">
 
-<style>
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 
-body{
- font-family:sans-serif;
- margin:0;
- background:#f5f5f5;
-}
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot
+} from
+"https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-header{
- background:#000;
- color:#fff;
- padding:15px;
- text-align:center;
- font-size:20px;
-}
 
-.container{
- max-width:900px;
- margin:auto;
- padding:20px;
- background:#fff;
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyClb-PEpIXkhE2ytEsql0pIvAVyNUC_T-I",
+  authDomain: "class-meeting-2-2.firebaseapp.com",
+  projectId: "class-meeting-2-2",
+  storageBucket: "class-meeting-2-2.firebasestorage.app",
+  messagingSenderId: "43109933184",
+  appId: "1:43109933184:web:d16e2240b21204fb000665"
+};
 
-.tabs{
- display:flex;
- margin-bottom:20px;
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-.tab{
- flex:1;
- padding:10px;
- text-align:center;
- cursor:pointer;
- background:#eee;
-}
-
-.tab.active{
- background:#000;
- color:#fff;
-}
-
-button{
- background:#000;
- color:#fff;
- padding:12px;
- border:none;
- width:100%;
- font-size:16px;
- margin-top:15px;
- cursor:pointer;
-}
-
-.day{
- border-bottom:1px solid #ddd;
- padding:10px 0;
-}
-
-label{
- margin-right:10px;
-}
-
-table{
- width:100%;
- border-collapse:collapse;
- font-size:14px;
-}
-
-td,th{
- border:1px solid #ccc;
- padding:6px;
- text-align:center;
-}
-
-.available{background:#c8e6c9}
-.morning{background:#bbdefb}
-.afternoon{background:#fff9c4}
-.unavailable{background:#ffcdd2}
-
-input[type=text]{
- width:100%;
- padding:10px;
- font-size:16px;
-}
-
-</style>
-</head>
-
-<body>
-
-<header>クラス会 出欠確認</header>
-
-<div class="container">
-
-<div class="tabs">
-<div class="tab active" onclick="showTab('form')">回答する</div>
-<div class="tab" onclick="showTab('result')">結果を見る</div>
-</div>
-
-<div id="form">
-
-<input id="name" placeholder="名前を入力">
-
-<div id="days"></div>
-
-<button onclick="submitForm()">回答送信</button>
-
-</div>
-
-<div id="result" style="display:none"></div>
-
-</div>
-
-<script>
-
-const days=[
-"3/29(金)","3/30(土)","3/31(日)",
-"4/1(水)","4/2(木)","4/3(金)",
-"4/4(土)","4/5(日)","4/6(月)",
-"4/7(火)","4/26(土)","4/27(日)"
-];
-
-const options=[
-["available","〇"],
-["morning","午前"],
-["afternoon","午後"],
-["unavailable","×"]
-];
-
-const KEY="responses";
-
-function getData(){
- return JSON.parse(localStorage.getItem(KEY)||"[]");
-}
-
-function saveData(d){
- localStorage.setItem(KEY,JSON.stringify(d));
-}
-
-const daysDiv=document.getElementById("days");
-
-days.forEach((d,i)=>{
- let html=`<div class="day"><b>${d}</b><br>`;
- options.forEach(o=>{
-  html+=`
-  <label>
-  <input type="radio" name="d${i}" value="${o[0]}">${o[1]}
-  </label>`;
- });
- html+="</div>";
- daysDiv.innerHTML+=html;
-});
-
-function submitForm(){
-
- const name=document.getElementById("name").value.trim();
- if(!name){alert("名前を入力してください");return;}
-
- let answers={};
-
- days.forEach((_,i)=>{
-  const r=document.querySelector(`input[name=d${i}]:checked`);
-  if(r)answers[i]=r.value;
- });
-
- let data=getData();
-
- let existing=data.find(x=>x.name===name);
-
- if(existing){
-   existing.answers=answers;
-   alert("回答を更新しました");
- }else{
-   data.push({name,answers});
-   alert("回答を登録しました");
- }
-
- saveData(data);
- renderResult();
-}
-
-function renderResult(){
-
- let data=getData();
-
- let html="<table><tr><th>名前</th>";
- days.forEach(d=>html+=`<th>${d}</th>`);
- html+="</tr>";
-
- let counts=new Array(days.length).fill(0);
-
- data.forEach(p=>{
-  html+=`<tr><td>${p.name}</td>`;
-
-  days.forEach((_,i)=>{
-   const a=p.answers[i]||"";
-   if(a==="available")counts[i]++;
-   html+=`<td class="${a}">${label(a)}</td>`;
-  });
-
-  html+="</tr>";
-});
-
-html+="</table>";
-
-let max=Math.max(...counts);
-
-html+="<h3>⭐ 最適日</h3>";
-
-days.forEach((d,i)=>{
- if(counts[i]===max && max>0){
-   html+=`${d}（${max}人参加可）<br>`;
- }
-});
-
-document.getElementById("result").innerHTML=html;
-}
-
-function label(v){
- return {
-  available:"〇",
-  morning:"午前",
-  afternoon:"午後",
-  unavailable:"×"
- }[v]||"";
-}
-
-function showTab(t){
-
-document.querySelectorAll(".tab").forEach(e=>e.classList.remove("active"));
-
-if(t==="form"){
- document.getElementById("form").style.display="block";
- document.getElementById("result").style.display="none";
- document.querySelectorAll(".tab")[0].classList.add("active");
-}else{
- renderResult();
- document.getElementById("form").style.display="none";
- document.getElementById("result").style.display="block";
- document.querySelectorAll(".tab")[1].classList.add("active");
-}
-}
-
-renderResult();
+window.db = db;
+window.collection = collection;
+window.addDoc = addDoc;
+window.onSnapshot = onSnapshot;
 
 </script>
-
-</body>
-</html>
