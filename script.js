@@ -1,9 +1,5 @@
-// ======================
-// Firebase
-// ======================
-
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 
 import {
  getFirestore,
@@ -11,8 +7,8 @@ import {
  setDoc,
  onSnapshot,
  collection
-} from
-"https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+}
+from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig={
  apiKey:"AIzaSyClb-PEpIXkhE2ytEsql0pIvAVyNUC_T-I",
@@ -23,15 +19,15 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
-// ======================
+// =====================
 // 日程
-// ======================
+// =====================
 
 const dates=[
-"3/29(金)","3/30(土)","3/31(日)",
-"4/1(水)","4/2(木)","4/3(金)",
-"4/4(土)","4/5(日)","4/6(月)",
-"4/7(火)","4/26(土)","4/27(日)"
+"3月29日(金)","3月30日(土)","3月31日(日)",
+"4月1日(水)","4月2日(木)","4月3日(金)",
+"4月4日(土)","4月5日(日)","4月6日(月)",
+"4月7日(火)","4月26日(土)","4月27日(日)"
 ];
 
 const choices={
@@ -41,9 +37,9 @@ afternoon:"午後のみ",
 ng:"×参加できません"
 };
 
-// ======================
+// =====================
 // フォーム生成（プルダウン）
-// ======================
+// =====================
 
 const table=document.getElementById("formTable");
 
@@ -69,9 +65,9 @@ dates.forEach(d=>{
 
 table.innerHTML=html;
 
-// ======================
+// =====================
 // 送信
-// ======================
+// =====================
 
 window.submitAnswer=async function(){
 
@@ -95,14 +91,12 @@ window.submitAnswer=async function(){
  );
 
  document.getElementById("message")
- .innerText="✅回答を保存しました（自動更新）";
+ .innerText="✅回答を保存しました";
 };
 
-// ======================
+// =====================
 // リアルタイム結果表示
-// ======================
-
-const resultDiv=document.getElementById("result");
+// =====================
 
 onSnapshot(
  collection(db,"responses"),
@@ -114,16 +108,16 @@ onSnapshot(
   data[doc.id]=doc.data().answers;
  });
 
- renderTable(data);
+ renderResult(data);
 });
 
-// ======================
+// =====================
 // 結果表示
-// ======================
+// =====================
 
-function renderTable(data){
+function renderResult(data){
 
- let html="<table class='resultTable'><tr><th>名前</th>";
+ let html="<table><tr><th>名前</th>";
 
  dates.forEach(d=>html+=`<th>${d}</th>`);
  html+="</tr>";
@@ -159,8 +153,7 @@ for(const name in data){
  html+=`
  <td class="${v||""}">
  ${choices[v]||"-"}
- </td>
- `;
+ </td>`;
  });
 
  html+="</tr>";
@@ -168,10 +161,9 @@ for(const name in data){
 
 html+="</table>";
 
-resultDiv.innerHTML=html;
+document.getElementById("result").innerHTML=html;
 
 document.getElementById("best").innerText=
-"⭐おすすめ日程："+
-(best.length?best.join(" / "):"未確定")+
-"（"+max+"人参加可能）";
+"⭐おすすめ日程："+best.join(" / ")
++"（"+max+"人参加可能）";
 }
